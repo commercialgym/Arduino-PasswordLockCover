@@ -1,8 +1,11 @@
 #include <Keypad.h>
+#include <LiquidCrystal_I2C.h>
 
 //number of rows and columns in keypad
 const byte ROWS = 4;
 const byte COLS = 4;
+int cursor = 0;
+int cursorRow = 0;
 
 //keymap for keypad
 char keys[ROWS][COLS] = {
@@ -18,8 +21,14 @@ byte colPins[COLS] = {6, 7, 8, 9};
 
 //keypad object
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+//initialize lcd obj
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
 
 void setup() {
+  lcd.init(); //initialize lcd
+  lcd.backlight();
+  lcd.begin(16, 2);
+  lcd.setCursor(0, 0);
   Serial.begin(9600);  
   Serial.println("4x4 Keypad Test");
 }
@@ -30,5 +39,20 @@ void loop() {
   if (key) {  //if a key is pressed it won't be null
     Serial.print("Key Pressed: ");
     Serial.println(key);
+    // lcd.clear();
+    if (cursorRow == 1 && cursor > 16)
+    {
+      lcd.clear();
+      cursorRow = 0;
+      cursor = 0;
+    }
+    if (cursor > 16)
+    {
+      cursorRow = 1;
+      cursor = 0;
+    }
+    lcd.setCursor(cursor, cursorRow);
+    lcd.print(key);
+    cursor++;
   }
 }
