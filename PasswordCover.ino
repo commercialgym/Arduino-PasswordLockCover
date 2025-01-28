@@ -2,12 +2,20 @@
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
 
+//prototypes
+void reset();
+void openDoor();
+void invalidPassword();
+bool validateInput();
+
 //number of rows and columns in keypad
 const byte ROWS = 4;
 const byte COLS = 4;
-int cursor = 0;
-int cursorRow = 0;
-int servoAngle = 0; 
+int cursor = 0; //del?
+int cursorRow = 0; //del?
+const int servoAngle = 110; 
+int delayDoorOpen = 2000;
+int delayIncorrect = 1000;
 
 char key; //key input from user
 char password[] = {'1', '2', '3', '4'}; //original password, subject to change
@@ -38,9 +46,9 @@ void setup() {
   lcd.backlight();
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
-  lcd.write("*ENTER PASSWORD*");
+  lcd.print("*ENTER PASSWORD*");
   lcd.setCursor(1, 1);
-  lcd.write("TO OPEN DOOR");
+  lcd.print("TO OPEN DOOR");
 
   servoBarrier.attach(11);
   servoBarrier.write(0);
@@ -52,7 +60,8 @@ void setup() {
 void loop() {
   key = keypad.getKey();  //constantly waiting for input
 
-  if (key) {  //if a key is pressed it won't be null
+  if (key) 
+  {  //if a key is pressed it won't be null
 
     if(key == '*')
     {
@@ -64,38 +73,49 @@ void loop() {
       if (validateInput())
       {
         //call function to open door
+        openDoor();
+        //delay before reset ?
+        delay(delayDoorOpen); //maybe put in open door function?
+        reset();
+      }
+      else
+      {
+        invalidPassword();
+        //delay before reset
+        delay(delayIncorrect);
+        reset();
       }
     }
-
-    Serial.print("Key Pressed: ");
-    Serial.println(key);
-    // lcd.clear();
-    if (cursorRow == 1 && cursor > 16)
-    {
-      lcd.clear();
-      cursorRow = 0;
-      cursor = 0;
-    }
-    if (cursor > 16)
-    {
-      cursorRow = 1;
-      cursor = 0;
-    }
-    lcd.setCursor(cursor, cursorRow);
-    lcd.print(key);
-    cursor++;
-
-    if (servoAngle == 0)
-    {
-      servoAngle = 90;
-    }
-    else
-    {
-      servoAngle = 0;
-    }
-
-    servoBarrier.write(servoAngle);
   }
+  //   Serial.print("Key Pressed: ");
+  //   Serial.println(key);
+  //   // lcd.clear();
+  //   if (cursorRow == 1 && cursor > 16)
+  //   {
+  //     lcd.clear();
+  //     cursorRow = 0;
+  //     cursor = 0;
+  //   }
+  //   if (cursor > 16)
+  //   {
+  //     cursorRow = 1;
+  //     cursor = 0;
+  //   }
+  //   lcd.setCursor(cursor, cursorRow);
+  //   lcd.print(key);
+  //   cursor++;
+
+  //   if (servoAngle == 0)
+  //   {
+  //     servoAngle = 90;
+  //   }
+  //   else
+  //   {
+  //     servoAngle = 0;
+  //   }
+
+  //   servoBarrier.write(servoAngle);
+  // }
 }
 
 bool validateInput()
@@ -103,27 +123,75 @@ bool validateInput()
   int i = 0;
   int j = 0;
   int correct = 0;
+  //clear the bottom of the lcd 
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
 
   while (key != '#') //make sure sizeof
   {
-    lcd.setCursor(j, 1);
-    lcd.print('*'); //or is it double quotes
-
-    if (key == password[i] && i < sizeof(password))
+    if (key)
     {
-      correct++;
-    }
-    else if (key != password[i] && i < sizeof(password))
-    {
-      correct--;
+      lcd.setCursor(j, 1);
+      lcd.print('*'); //or is it double quotes
+
+      if (key == password[i] && i < sizeof(password))
+      {
+        correct++;
+      }
+      else if (key != password[i] && i < sizeof(password))
+      {
+        correct--;
+      }
+
+      key = NO_KEY;
+      j++;
+      i++;
     }
 
-    j++;
-    i++;
+    key = keypad.getKey();
   }
+
+  key = NO_KEY;
 
   if (correct == sizeof(password))
   {
     return true;
   }
+  else
+  {
+    return false;
+  }
+}
+
+void invalidPassword()
+{
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("INVALID CODE");
+}
+
+// void validPassword()
+// {
+//   lcd.clear();
+//   lcd.setCursor(0,0);
+//   lcd.print("DOOR OPENING");
+// }
+
+void openDoor()
+{
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("DOOR OPENING");
+  servoBarrier.write(servoAngle);
+}
+
+void reset()
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("*ENTER PASSWORD*");
+  lcd.setCursor(1, 1);
+  lcd.print("TO OPEN DOOR");
+
+  servoBarrier.write(0);
 }
