@@ -1,11 +1,13 @@
 #include <Keypad.h>
 #include <LiquidCrystal_I2C.h>
+#include <Servo.h>
 
 //number of rows and columns in keypad
 const byte ROWS = 4;
 const byte COLS = 4;
 int cursor = 0;
 int cursorRow = 0;
+int servoAngle = 0;
 
 //keymap for keypad
 char keys[ROWS][COLS] = {
@@ -23,12 +25,18 @@ byte colPins[COLS] = {6, 7, 8, 9};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 //initialize lcd obj
 LiquidCrystal_I2C lcd(0x27, 16, 2); 
+//initialize servo motor (barrier/cover)
+Servo servoBarrier;
 
 void setup() {
   lcd.init(); //initialize lcd
   lcd.backlight();
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
+
+  servoBarrier.attach(11);
+  servoBarrier.write(0);
+
   Serial.begin(9600);  
   Serial.println("4x4 Keypad Test");
 }
@@ -54,5 +62,16 @@ void loop() {
     lcd.setCursor(cursor, cursorRow);
     lcd.print(key);
     cursor++;
+
+    if (servoAngle == 0)
+    {
+      servoAngle = 90;
+    }
+    else
+    {
+      servoAngle = 0;
+    }
+
+    servoBarrier.write(servoAngle);
   }
 }
