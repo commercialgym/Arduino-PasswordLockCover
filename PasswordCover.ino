@@ -7,7 +7,12 @@ const byte ROWS = 4;
 const byte COLS = 4;
 int cursor = 0;
 int cursorRow = 0;
-int servoAngle = 0;
+int servoAngle = 0; 
+
+char key; //key input from user
+char password[] = {'1', '2', '3', '4'}; //original password, subject to change
+// bool correct = false; //flag for when a user is entering a password to guess
+
 
 //keymap for keypad
 char keys[ROWS][COLS] = {
@@ -33,6 +38,9 @@ void setup() {
   lcd.backlight();
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
+  lcd.write("*ENTER PASSWORD*");
+  lcd.setCursor(1, 1);
+  lcd.write("TO OPEN DOOR");
 
   servoBarrier.attach(11);
   servoBarrier.write(0);
@@ -42,9 +50,23 @@ void setup() {
 }
 
 void loop() {
-  char key = keypad.getKey();  
+  key = keypad.getKey();  //constantly waiting for input
 
   if (key) {  //if a key is pressed it won't be null
+
+    if(key == '*')
+    {
+      //call function to allow user to update password
+    }
+    else
+    {
+      //get the code being inputted from user
+      if (validateInput())
+      {
+        //call function to open door
+      }
+    }
+
     Serial.print("Key Pressed: ");
     Serial.println(key);
     // lcd.clear();
@@ -73,5 +95,35 @@ void loop() {
     }
 
     servoBarrier.write(servoAngle);
+  }
+}
+
+bool validateInput()
+{
+  int i = 0;
+  int j = 0;
+  int correct = 0;
+
+  while (key != '#') //make sure sizeof
+  {
+    lcd.setCursor(j, 1);
+    lcd.print('*'); //or is it double quotes
+
+    if (key == password[i] && i < sizeof(password))
+    {
+      correct++;
+    }
+    else if (key != password[i] && i < sizeof(password))
+    {
+      correct--;
+    }
+
+    j++;
+    i++;
+  }
+
+  if (correct == sizeof(password))
+  {
+    return true;
   }
 }
