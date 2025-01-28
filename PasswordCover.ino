@@ -68,7 +68,7 @@ void loop() {
     if(key == '*')
     {
       //call function to allow user to update password
-      key = NO_KEY; //do i need this
+      key = NO_KEY; //do i need this?  the "Password" still doesn't print to lcd
       changePassword();
       delay(delayTime);
       reset();
@@ -130,7 +130,7 @@ bool validateInput()
 
   key = NO_KEY;
 
-  if (correct == sizeof(password))
+  if (correct == sizeof(password) && i == sizeof(password)) //checks that the user didn't add more numbers than necessary after entering correct password
   {
     return true;
   }
@@ -180,71 +180,132 @@ void changePassword()
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("ENTER CURRENT");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(1, 1); //changed from 0 to 1
   lcd.print("PASSWORD "); //debug didn't print
-
-  key = keypad.getKey();
+  while (key == NO_KEY)
+  {
+    key = keypad.getKey();
+  }
   if (validateInput())
   {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("ENTER NEW CODE");
 
-    char newPassword[4] = {'0', '0', '0', '0'};;
+    char newPassword[4] = {'0', '0', '0', '0'};
     int i = 0;
     int j = 0;
-    //int same = 0; //to check if it's the same password
+    int same = 0; //to check if it's the same password
 
 
-    while (key != '#' && i <= 4) 
+    while (key != '#') 
     {
-      key = keypad.getKey();
 
       if (key)
       {
+
         lcd.setCursor(j, 1);
         lcd.print(key); 
 
-        // if (key == password[i] && i < sizeof(password)) 
-        // {
-        //   //same++;
-        // }
-        // else if (key != password[i] && i < sizeof(password))
-        // {
-        //   //same--;
-        // }
+        if (key == password[i] && i < sizeof(password)) 
+        {
+          same++;
+        }
+        else if (key != password[i] && i < sizeof(password))
+        {
+          same--;
+        }
 
-        if (i <= sizeof(password)) 
+        if (i < sizeof(password)) //less than sizeof password because i needs to be a valid index number
         {
           newPassword[i] = key; //later: assign to original password if it's valid
-          password[i] = key;
         }
 
         key = NO_KEY;
-        j++;
+
+        Serial.println(i); //debug test
+  
         i++;
+        j++;
       }
-      key = NO_KEY;
+
+      key = keypad.getKey();
 
     }
 
     key = NO_KEY;
 
+    if (same == sizeof(password))//the password is the same as before
+    {
+      //tell user that it didn't change
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("INVALID ENTRY");
+      lcd.setCursor(0, 1);
+      lcd.print("CANT BE SAME");
+    }
+    else if (i > sizeof(password))
+    {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("INVALID ENTRY");
+      lcd.setCursor(0, 1);
+      lcd.print("MAX 4 NUMS");
+      Serial.println("TOO MANY NUMBERS ");
+      Serial.print(i);
+    }
+    else if (i < sizeof(password))
+    {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("INVALID ENTRY");
+      lcd.setCursor(0, 1);
+      lcd.print("MIN 4 NUMS");
+      Serial.println("TOO LITTLE NUMBERS ");
+      Serial.print(i);
+    }
+    else if (i == sizeof(password)) //it's a new password
+    {
+       // && same != sizeof(password) 
+      //when i == size of password, means that the user entered 4 inputs then entered them. no more, no little.
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("PRESS # TO");
+      lcd.setCursor(0, 1);
+      lcd.print("CONFIRM ");
+      lcd.setCursor(9, 1);
 
-    // if (same == sizeof(password))
-    // {
-    //   //the password is the same as before
-    // }
-    // else
-    // {
-    //   //it's a new password
-        // if (i == sizeof(password)) // && same != sizeof(password)
-        // {
-        //   //press pound to verify they want to change
-        //   //then assign the newPassword to old password
-        // }
-    // }
+      while (true)
+      {
+        key = keypad.getKey();
 
+        if (key)
+        {
+          lcd.print(key);
+
+          if (key == '#') //press pound to verify they want to change
+          {
+            //then assign the newPassword to old password
+            for (int i = 0; i < sizeof(password); i++)
+            {
+              password[i] = newPassword[i];
+            }
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("SUCCESS");
+            break;
+          }
+          else
+          {
+            //they didn't confirm
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("CANCELLED");
+            break;
+          }
+        }
+      }
+    }
   }
   else
   {
@@ -252,9 +313,5 @@ void changePassword()
     // delay(delayIncorrect); //did in main
     // reset();
   }
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("SUCCESS");
 
 }
