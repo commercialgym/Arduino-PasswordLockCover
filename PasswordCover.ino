@@ -7,6 +7,7 @@ void reset();
 void openDoor();
 void invalidPassword();
 bool validateInput();
+void changePassword();
 
 //number of rows and columns in keypad
 const byte ROWS = 4;
@@ -16,6 +17,7 @@ int cursorRow = 0; //del?
 const int servoAngle = 110; 
 int delayDoorOpen = 2000;
 int delayIncorrect = 1000;
+int delayTime = 2000;
 
 char key; //key input from user
 char password[] = {'1', '2', '3', '4'}; //original password, subject to change
@@ -66,6 +68,10 @@ void loop() {
     if(key == '*')
     {
       //call function to allow user to update password
+      key = NO_KEY; //do i need this
+      changePassword();
+      delay(delayTime);
+      reset();
     }
     else
     {
@@ -82,40 +88,11 @@ void loop() {
       {
         invalidPassword();
         //delay before reset
-        delay(delayIncorrect);
+        delay(delayIncorrect); 
         reset();
       }
     }
   }
-  //   Serial.print("Key Pressed: ");
-  //   Serial.println(key);
-  //   // lcd.clear();
-  //   if (cursorRow == 1 && cursor > 16)
-  //   {
-  //     lcd.clear();
-  //     cursorRow = 0;
-  //     cursor = 0;
-  //   }
-  //   if (cursor > 16)
-  //   {
-  //     cursorRow = 1;
-  //     cursor = 0;
-  //   }
-  //   lcd.setCursor(cursor, cursorRow);
-  //   lcd.print(key);
-  //   cursor++;
-
-  //   if (servoAngle == 0)
-  //   {
-  //     servoAngle = 90;
-  //   }
-  //   else
-  //   {
-  //     servoAngle = 0;
-  //   }
-
-  //   servoBarrier.write(servoAngle);
-  // }
 }
 
 bool validateInput()
@@ -193,5 +170,91 @@ void reset()
   lcd.setCursor(1, 1);
   lcd.print("TO OPEN DOOR");
 
+  key = NO_KEY;
+
   servoBarrier.write(0);
+}
+
+void changePassword()
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("ENTER CURRENT");
+  lcd.setCursor(0, 1);
+  lcd.print("PASSWORD "); //debug didn't print
+
+  key = keypad.getKey();
+  if (validateInput())
+  {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("ENTER NEW CODE");
+
+    char newPassword[4] = {'0', '0', '0', '0'};;
+    int i = 0;
+    int j = 0;
+    //int same = 0; //to check if it's the same password
+
+
+    while (key != '#' && i <= 4) 
+    {
+      key = keypad.getKey();
+
+      if (key)
+      {
+        lcd.setCursor(j, 1);
+        lcd.print(key); 
+
+        // if (key == password[i] && i < sizeof(password)) 
+        // {
+        //   //same++;
+        // }
+        // else if (key != password[i] && i < sizeof(password))
+        // {
+        //   //same--;
+        // }
+
+        if (i <= sizeof(password)) 
+        {
+          newPassword[i] = key; //later: assign to original password if it's valid
+          password[i] = key;
+        }
+
+        key = NO_KEY;
+        j++;
+        i++;
+      }
+      key = NO_KEY;
+
+    }
+
+    key = NO_KEY;
+
+
+    // if (same == sizeof(password))
+    // {
+    //   //the password is the same as before
+    // }
+    // else
+    // {
+    //   //it's a new password
+        // if (i == sizeof(password)) // && same != sizeof(password)
+        // {
+        //   //press pound to verify they want to change
+        //   //then assign the newPassword to old password
+        // }
+    // }
+
+  }
+  else
+  {
+    invalidPassword();
+    // delay(delayIncorrect); //did in main
+    // reset();
+  }
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("SUCCESS");
+
 }
